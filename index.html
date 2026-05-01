@@ -3,68 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ModelsLab Image Generator</title>
+  <title>ModelsLab Realtime Generator</title>
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      background: #f0f2f5; 
-      margin: 0; 
-      padding: 20px; 
-    }
-    .container { 
-      max-width: 700px; 
-      margin: 40px auto; 
-      background: white; 
-      padding: 25px; 
-      border-radius: 12px; 
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
-    }
+    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+    .container { max-width: 700px; margin: 40px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
     h1 { text-align: center; color: #2563eb; }
-    textarea { 
-      width: 100%; 
-      height: 130px; 
-      padding: 12px; 
-      border: 2px solid #ddd; 
-      border-radius: 8px; 
-      font-size: 16px; 
-    }
-    button { 
-      width: 100%; 
-      padding: 14px; 
-      background: #2563eb; 
-      color: white; 
-      border: none; 
-      border-radius: 8px; 
-      font-size: 16px; 
-      cursor: pointer; 
-      margin-top: 15px; 
-    }
+    textarea { width: 100%; height: 140px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+    button { width: 100%; padding: 14px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 15px; }
     button:disabled { background: #999; cursor: not-allowed; }
-    #loading { 
-      text-align: center; 
-      margin: 15px 0; 
-      color: #2563eb; 
-      font-weight: bold; 
-      display: none; 
-    }
-    #result img { 
-      max-width: 100%; 
-      border-radius: 10px; 
-      margin-top: 20px; 
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-    }
+    #loading { text-align: center; margin: 20px 0; color: #2563eb; font-weight: bold; display: none; }
+    #result img { max-width: 100%; border-radius: 10px; margin-top: 20px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🖼️ ModelsLab Image Generator</h1>
-    <p style="text-align:center; color:#666;">Free tier + Pay as you go (sangat murah)</p>
+    <h1>🖼️ ModelsLab Realtime Image Generator</h1>
+    <p style="text-align:center; color:#666;">Endpoint: /v6/realtime/text2img</p>
 
-    <textarea id="prompt" placeholder="Masukkan deskripsi gambar yang diinginkan..."></textarea>
+    <textarea id="prompt" placeholder="Masukkan prompt di sini..."></textarea>
     
     <button onclick="generateImage()" id="btn">Generate Gambar</button>
     
-    <div id="loading">⏳ Sedang generate gambar... (Flux model)</div>
+    <div id="loading">⏳ Sedang generate (Realtime mode)... Mohon tunggu</div>
     <div id="result"></div>
   </div>
 
@@ -75,10 +35,7 @@
       const result = document.getElementById('result');
       const btn = document.getElementById('btn');
 
-      if (!prompt) {
-        alert("Masukkan prompt dulu!");
-        return;
-      }
+      if (!prompt) return alert("Prompt tidak boleh kosong!");
 
       btn.disabled = true;
       loading.style.display = 'block';
@@ -94,17 +51,12 @@
         const data = await res.json();
 
         if (data.success && data.image) {
-          result.innerHTML = `
-            <h3>✅ Hasil Gambar:</h3>
-            <img src="${data.image}" alt="Generated Image">
-            <p><strong>Prompt:</strong> ${prompt}</p>
-          `;
+          result.innerHTML = `<img src="${data.image}" alt="Hasil Gambar">`;
         } else {
-          result.innerHTML = `<p style="color:red;">Error: ${data.error || 'Gagal generate gambar'}</p>`;
+          result.innerHTML = `<p style="color:red;">${data.error || data.message || 'Gagal generate'}</p>`;
         }
       } catch (err) {
-        console.error(err);
-        result.innerHTML = `<p style="color:red;">Gagal koneksi ke server. Cek console browser (F12).</p>`;
+        result.innerHTML = `<p style="color:red;">Gagal koneksi ke server</p>`;
       } finally {
         loading.style.display = 'none';
         btn.disabled = false;

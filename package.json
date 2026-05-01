@@ -1,5 +1,5 @@
 {
-  "name": "models-lab-image-gen",
+  "name": "models-lab-realtime",
   "version": "1.0.0",
   "scripts": {
     "dev": "node server.js",

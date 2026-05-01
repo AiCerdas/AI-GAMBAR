@@ -7,12 +7,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));   // kalau mau taruh index.html di folder public nanti
+app.use(express.static('.'));   // serve index.html dari root
 
-// Route utama untuk generate gambar
+// Endpoint Generate Gambar
 app.post('/api/generate', async (req, res) => {
   const { prompt } = req.body;
 
@@ -26,19 +25,19 @@ app.post('/api/generate', async (req, res) => {
       return res.status(500).json({ error: 'MODELSLAB_API_KEY belum diatur di Vercel' });
     }
 
-    const response = await fetch('https://modelslab.com/api/v7/images/text-to-image', {
+    const response = await fetch('https://modelslab.com/api/v6/realtime/text2img', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         key: apiKey,
-        model_id: "flux",
         prompt: prompt,
+        negative_prompt: "blurry, low quality, deformed, ugly",
         width: 1024,
         height: 1024,
         samples: 1,
-        num_inference_steps: 25,
-        guidance_scale: 7.5,
-        safety_checker: "no"
+        safety_checker: false,
+        instant_response: true,
+        base64: false
       })
     });
 
@@ -46,24 +45,25 @@ app.post('/api/generate', async (req, res) => {
 
     if (data.status === "success" && data.output && data.output.length > 0) {
       res.json({ success: true, image: data.output[0] });
+    } else if (data.status === "processing") {
+      res.json({ success: false, message: "Gambar sedang diproses, coba lagi sebentar" });
     } else {
       res.status(500).json({ 
-        error: data.message || 'Gagal generate gambar dari ModelsLab' 
+        error: data.message || 'Gagal generate gambar' 
       });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Terjadi kesalahan saat generate gambar' });
+    res.status(500).json({ error: 'Terjadi kesalahan saat menghubungi ModelsLab' });
   }
 });
 
-// Route untuk cek server hidup
 app.get('/', (req, res) => {
-  res.send('Server Express ModelsLab berjalan!');
+  res.sendFile(__dirname + '/index.html');
 });
 
 app.listen(PORT, () => {
-  console.log(`Server berjalan di port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
 
-module.exports = app;   // Penting untuk Vercel
+module.exports = app;
