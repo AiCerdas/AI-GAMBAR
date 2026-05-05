@@ -1,67 +1,65 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ModelsLab Realtime Generator</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-    .container { max-width: 700px; margin: 40px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-    h1 { text-align: center; color: #2563eb; }
-    textarea { width: 100%; height: 140px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
-    button { width: 100%; padding: 14px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 15px; }
-    button:disabled { background: #999; cursor: not-allowed; }
-    #loading { text-align: center; margin: 20px 0; color: #2563eb; font-weight: bold; display: none; }
-    #result img { max-width: 100%; border-radius: 10px; margin-top: 20px; }
-  </style>
+<meta charset="UTF-8">
+<title>AbidinAI Image Generator</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+  text-align: center;
+  padding: 50px;
+}
+input {
+  width: 300px;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
+button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #22c55e;
+  color: white;
+  cursor: pointer;
+}
+img {
+  margin-top: 20px;
+  max-width: 400px;
+  border-radius: 10px;
+}
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <h1>🖼️ ModelsLab Realtime Image Generator</h1>
-    <p style="text-align:center; color:#666;">Endpoint: /v6/realtime/text2img</p>
 
-    <textarea id="prompt" placeholder="Masukkan prompt di sini..."></textarea>
-    
-    <button onclick="generateImage()" id="btn">Generate Gambar</button>
-    
-    <div id="loading">⏳ Sedang generate (Realtime mode)... Mohon tunggu</div>
-    <div id="result"></div>
-  </div>
+<h1>🔥 AbidinAI Image Generator</h1>
 
-  <script>
-    async function generateImage() {
-      const prompt = document.getElementById('prompt').value.trim();
-      const loading = document.getElementById('loading');
-      const result = document.getElementById('result');
-      const btn = document.getElementById('btn');
+<input type="text" id="prompt" placeholder="Masukkan prompt...">
+<button onclick="generate()">Generate</button>
 
-      if (!prompt) return alert("Prompt tidak boleh kosong!");
+<br>
+<img id="result" />
 
-      btn.disabled = true;
-      loading.style.display = 'block';
-      result.innerHTML = '';
+<script>
+async function generate() {
+  const prompt = document.getElementById("prompt").value;
 
-      try {
-        const res = await fetch('/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt })
-        });
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ prompt })
+  });
 
-        const data = await res.json();
+  const data = await res.json();
+  document.getElementById("result").src = data.image;
+}
+</script>
 
-        if (data.success && data.image) {
-          result.innerHTML = `<img src="${data.image}" alt="Hasil Gambar">`;
-        } else {
-          result.innerHTML = `<p style="color:red;">${data.error || data.message || 'Gagal generate'}</p>`;
-        }
-      } catch (err) {
-        result.innerHTML = `<p style="color:red;">Gagal koneksi ke server</p>`;
-      } finally {
-        loading.style.display = 'none';
-        btn.disabled = false;
-      }
-    }
-  </script>
 </body>
 </html>
