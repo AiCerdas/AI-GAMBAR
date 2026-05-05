@@ -4,7 +4,6 @@ const path = require("path");
 const app = express();
 app.use(express.json());
 
-// tampilkan halaman
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
@@ -16,7 +15,7 @@ app.post("/api/generate", async (req, res) => {
 
   try {
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+      "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
       {
         method: "POST",
         headers: {
@@ -24,11 +23,25 @@ app.post("/api/generate", async (req, res) => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          inputs: prompt
+          inputs: prompt,
+          options: { wait_for_model: true } // 🔥 penting!
         })
       }
     );
 
+    // 🔥 cek kalau bukan gambar
+    const contentType = response.headers.get("content-type");
+
+    if (!contentType || contentType.includes("application/json")) {
+      const err = await response.json();
+      console.log("ERROR API:", err);
+
+      return res.json({
+        image: "https://via.placeholder.com/400x300?text=Model+Loading..."
+      });
+    }
+
+    // kalau sukses
     const buffer = await response.arrayBuffer();
     const base64 = Buffer.from(buffer).toString("base64");
 
@@ -38,7 +51,9 @@ app.post("/api/generate", async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Gagal generate gambar" });
+    res.json({
+      image: "https://via.placeholder.com/400x300?text=Server+Error"
+    });
   }
 });
 
