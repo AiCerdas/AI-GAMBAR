@@ -38,7 +38,7 @@ img {
 
 <h1>🔥 AbidinAI Image Generator</h1>
 
-<input type="text" id="prompt" placeholder="Masukkan prompt...">
+<input type="text" id="prompt" placeholder="Contoh: robot futuristik, cinematic">
 <button onclick="generate()">Generate</button>
 
 <br>
@@ -47,6 +47,9 @@ img {
 <script>
 async function generate() {
   const prompt = document.getElementById("prompt").value;
+  const img = document.getElementById("result");
+
+  img.src = "https://i.imgur.com/6RMhx.gif"; // loading
 
   const res = await fetch("/api/generate", {
     method: "POST",
@@ -57,7 +60,7 @@ async function generate() {
   });
 
   const data = await res.json();
-  document.getElementById("result").src = data.image;
+  img.src = data.image;
 }
 </script>
 
