@@ -1,61 +1,61 @@
-import express from "express";
-import dotenv from "dotenv";
-import fetch from "node-fetch";
-import path from "path";
-import { fileURLToPath } from "url";
+import express from 'express';
+import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
-
-const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const app = express();
 app.use(express.json());
 
-app.use(express.static(__dirname));
+// Endpoint untuk Generate Gambar
+app.post('/api/generate', async (req, res) => {
+  const { prompt } = req.body;
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-app.post("/api/generate", async (req, res) => {
+  if (!prompt) {
+    return res.status(400).json({ error: 'Prompt is required' });
+  }
 
   try {
-
-    const { prompt } = req.body;
-
     const response = await fetch(
       "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
       {
-        method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.HF_TOKEN}`,
-          "Content-Type": "application/json"
+          Authorization: `Bearer ${process.env.HF_API_KEY}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          inputs: prompt
-        })
+        method: "POST",
+        body: JSON.stringify({ inputs: prompt }),
       }
     );
 
-    const buffer = Buffer.from(await response.arrayBuffer());
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to generate image');
+    }
 
-    res.setHeader("Content-Type", "image/png");
-    res.send(buffer);
-
-  } catch (err) {
-
-    res.status(500).json({
-      error: err.message
-    });
-
+    const buffer = await response.arrayBuffer();
+    const base64Image = Buffer.from(buffer).toString('base64');
+    
+    res.json({ image: `data:image/jpeg;base64,${base64Image}` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
   }
+});
 
+// Serve static file untuk local development
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-  console.log("Server jalan di port " + PORT);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
+
+export default app;
