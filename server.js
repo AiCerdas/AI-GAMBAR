@@ -1,60 +1,67 @@
-const express = require("express");
-const path = require("path");
+// server.js
+
+import express from "express";
+import dotenv from "dotenv";
+import fetch from "node-fetch";
+
+dotenv.config();
 
 const app = express();
+
 app.use(express.json());
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-const API_KEY = process.env.HF_API_KEY;
+app.use(express.static("./"));
 
 app.post("/api/generate", async (req, res) => {
-  const { prompt } = req.body;
 
   try {
+
+    const { prompt } = req.body;
+
+    if(!prompt){
+      return res.status(400).json({
+        error:"Prompt kosong"
+      });
+    }
+
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
+      "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
       {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${API_KEY}`,
-          "Content-Type": "application/json"
+        method:"POST",
+        headers:{
+          "Authorization": `Bearer ${process.env.HF_TOKEN}`,
+          "Content-Type":"application/json"
         },
-        body: JSON.stringify({
-          inputs: prompt,
-          options: { wait_for_model: true } // 🔥 penting!
+        body:JSON.stringify({
+          inputs: prompt
         })
       }
     );
 
-    // 🔥 cek kalau bukan gambar
-    const contentType = response.headers.get("content-type");
+    if(!response.ok){
 
-    if (!contentType || contentType.includes("application/json")) {
-      const err = await response.json();
-      console.log("ERROR API:", err);
+      const errText = await response.text();
 
-      return res.json({
-        image: "https://via.placeholder.com/400x300?text=Model+Loading..."
+      return res.status(500).json({
+        error: errText
       });
     }
 
-    // kalau sukses
-    const buffer = await response.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString("base64");
+    const buffer = Buffer.from(await response.arrayBuffer());
 
-    res.json({
-      image: `data:image/png;base64,${base64}`
-    });
+    res.setHeader("Content-Type","image/png");
+    res.send(buffer);
 
-  } catch (err) {
-    console.error(err);
-    res.json({
-      image: "https://via.placeholder.com/400x300?text=Server+Error"
+  } catch(err){
+
+    res.status(500).json({
+      error: err.message
     });
   }
+
 });
 
-module.exports = app;
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Server berjalan di port " + PORT);
+});
